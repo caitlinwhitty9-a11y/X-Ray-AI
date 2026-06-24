@@ -1,0 +1,2 @@
+- [Python backend setup](python-backend-setup.md) — pip needs --break-system-packages; use absolute paths in workflow commands; TF already installed at .pythonlibs
+- [Model inference](model-inference.md) — CNN input is 128x128 RGB (NOT 150x150); TTA with 7 passes + CLAHE equalization improves COVID/TB/pneumonia separation

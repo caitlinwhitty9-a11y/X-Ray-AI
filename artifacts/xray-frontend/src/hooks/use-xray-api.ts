@@ -1,4 +1,3 @@
-import { useState, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 interface ClassInfo {
@@ -14,13 +13,16 @@ interface PredictionScore {
   percentage: number;
 }
 
-interface PredictionResponse {
+export interface PredictionResponse {
   prediction: string;
   confidence: number;
   confidence_percentage: number;
   all_scores: PredictionScore[];
   class_info: ClassInfo;
   filename: string;
+  differential: boolean;
+  differential_note: string | null;
+  tta_passes: number;
 }
 
 interface Sample {
@@ -83,7 +85,7 @@ export function usePredict() {
         try {
           const errData = await res.json();
           if (errData.detail) msg = errData.detail;
-        } catch (e) {}
+        } catch (_) {}
         throw new Error(msg);
       }
       return res.json();
