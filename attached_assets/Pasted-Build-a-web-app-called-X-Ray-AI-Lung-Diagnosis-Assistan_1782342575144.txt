@@ -1,0 +1,29 @@
+Build a web app called "X-Ray AI Lung Diagnosis Assistant" from my project files. Unzip `replit_project.zip` into the project root first — all files live there.
+
+WHAT IT DOES: A deep Convolutional Neural Network (CNN) trained on thousands of chest X-ray images to identify patterns associated with pneumonia. The model analyzes lung structures, detects abnormalities, and classifies scans as either Normal or Pneumonia while providing a confidence score for its prediction.
+HOW USERS INTERACT: Uploads a chest X-ray image for automated analysis and diagnostic screening.
+HOW RESULTS APPEAR: Predicted diagnosis, confidence percentage, visual confidence bar, and a brief AI-generated explanation of the detected lung patterns.
+VISUAL STYLE: Modern medical dashboard with a clean, professional interface featuring soft pastel blue-to-teal gradients, intuitive icons, rounded cards, and high readability for healthcare-focused visualization.
+EXTRA FEATURES: Interactive confidence meter, sample X-ray gallery, educational information about pneumonia, side-by-side comparison with healthy lungs, model performance statistics, and downloadable prediction reports.
+
+Frontend stack is up to you — Gradio, Streamlit, or React + a Python backend are all fine. Pick whichever makes the nicest app. A Python backend runs the model.
+
+FIGURE OUT THE MODEL YOURSELF — don't assume, inspect the bundle:
+- Load every file through `model_setup.paths["<filename>"]`, never by raw path. Read model_setup.py's docstring for loaders (joblib, Keras, Transformers).
+- Use ALL provided files, not just the model — scalers, tokenizers, label maps, helper scripts, and data files are included because the app needs them.
+- If the bundle has multiple models or data sources for different features, build a section/mode for each — don't ship just one.
+- Inspect the model and any data/schema files to determine the exact input shape and output type, then build the UI to match.
+
+INPUTS: give users preloaded examples to try instantly, matched to the input type. For these built-in examples, use the real samples included in the bundle (for example the sample_images folder, or a sample data file like a .csv / .json / .npz). They come from the model's own data, so they match what it expects. Do not replace the built-in examples with stock photos, web-search results, or AI-generated images, which will not match the model and give meaningless predictions. This applies only to the preloaded examples: if the user later asks for a feature that needs outside images or data, that is fine. If the model takes many numeric features, let users pick or tweak an example instead of typing every field.
+
+OUTPUTS: present results clearly and visually, matched to the output type — probability bars for classification, a value card for a single number, a ranked list for recommendations. No plain unstyled text.
+
+RUNS ON REPLIT — must do:
+- Bind the server to host 0.0.0.0 and the port Replit provides (the PORT env var if set) so the web preview loads.
+- Every process the app needs must start in PRODUCTION, not just development. If you split into multiple services (e.g. a Python backend), give each one a production run command, not only a development one, and confirm the published deployment launches them all. A backend with only a dev run config will fail when published.
+- Install the included requirements.txt; if a pinned version conflicts with the environment, use the nearest compatible one.
+- Some model files may download on first launch; show a loading state.
+
+VISUAL POLISH: hero section with the app name and a one-line tagline; Inter font; mobile-friendly layout; styled cards/charts; make it feel like a real product, not a default demo.
+
+DONE WHEN: the app starts, the web preview loads, and clicking a preloaded example returns a correct-looking result.
