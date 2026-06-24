@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Activity, AlertTriangle, CheckCircle, RefreshCcw } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle, RefreshCcw, Download, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { generateDiagnosticReport } from "@/lib/generate-report";
 
 const CLASS_STYLES: Record<string, { container: string; bar: string }> = {
   healthy: {
@@ -29,8 +31,27 @@ interface ResultsPanelProps {
 }
 
 export function ResultsPanel({ result, imageSrc, onReset }: ResultsPanelProps) {
+  const [downloading, setDownloading] = useState(false);
   const predClass = result.prediction.toLowerCase();
   const styles = CLASS_STYLES[predClass] || CLASS_STYLES.healthy;
+
+  async function handleDownload() {
+    setDownloading(true);
+    try {
+      await generateDiagnosticReport({
+        prediction: result.prediction,
+        confidence_percentage: result.confidence_percentage,
+        all_scores: result.all_scores,
+        class_info: result.class_info,
+        filename: result.filename,
+        imageSrc,
+      });
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <motion.div
@@ -41,21 +62,45 @@ export function ResultsPanel({ result, imageSrc, onReset }: ResultsPanelProps) {
     >
       {/* Image Side */}
       <div className="space-y-4">
-        <div 
-          className="rounded-2xl overflow-hidden border-4 bg-muted relative aspect-square shadow-lg transition-colors duration-500" 
+        <div
+          className="rounded-2xl overflow-hidden border-4 bg-muted relative aspect-square shadow-lg transition-colors duration-500"
           style={{ borderColor: result.class_info.color }}
         >
           <img src={imageSrc} className="w-full h-full object-cover" alt="X-Ray Scan" />
         </div>
-        <Button onClick={onReset} variant="outline" className="w-full h-12 text-base font-medium shadow-sm hover:bg-accent hover:text-accent-foreground">
+        <Button
+          data-testid="button-analyze-another"
+          onClick={onReset}
+          variant="outline"
+          className="w-full h-12 text-base font-medium shadow-sm hover:bg-accent hover:text-accent-foreground"
+        >
           <RefreshCcw className="w-4 h-4 mr-2" />
           Analyze Another Scan
+        </Button>
+        <Button
+          data-testid="button-download-report"
+          onClick={handleDownload}
+          disabled={downloading}
+          className="w-full h-12 text-base font-medium shadow-sm"
+          style={{ backgroundColor: result.class_info.color, color: "#fff" }}
+        >
+          {downloading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Generating Report...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4 mr-2" />
+              Download PDF Report
+            </>
+          )}
         </Button>
       </div>
 
       {/* Results Side */}
       <div className="space-y-6 flex flex-col">
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2 }}
@@ -63,7 +108,7 @@ export function ResultsPanel({ result, imageSrc, onReset }: ResultsPanelProps) {
         >
           <h2 className="text-sm font-bold uppercase tracking-widest opacity-80">AI Diagnosis</h2>
           <div className="text-5xl font-extrabold capitalize flex items-center gap-3">
-            {predClass === 'healthy' ? <CheckCircle className="w-10 h-10" /> : <AlertTriangle className="w-10 h-10" />}
+            {predClass === "healthy" ? <CheckCircle className="w-10 h-10" /> : <AlertTriangle className="w-10 h-10" />}
             {result.prediction}
           </div>
           <div className="text-2xl font-semibold opacity-90 tracking-tight">
@@ -71,7 +116,7 @@ export function ResultsPanel({ result, imageSrc, onReset }: ResultsPanelProps) {
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}
@@ -81,7 +126,7 @@ export function ResultsPanel({ result, imageSrc, onReset }: ResultsPanelProps) {
             <h3 className="font-semibold text-lg">Analysis Details</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">{result.class_info.description}</p>
           </div>
-          
+
           <div className="bg-muted/50 p-4 rounded-xl border border-border/50">
             <h4 className="text-sm font-medium flex items-center gap-2 mb-2 text-foreground">
               <Activity className="w-4 h-4 text-primary" />
@@ -96,7 +141,7 @@ export function ResultsPanel({ result, imageSrc, onReset }: ResultsPanelProps) {
               {result.all_scores.map((score: any, index: number) => {
                 const itemStyle = CLASS_STYLES[score.label.toLowerCase()] || CLASS_STYLES.healthy;
                 return (
-                  <div key={score.label} className="space-y-1.5">
+                  <div key={score.label} className="space-y-1.5" data-testid={`bar-probability-${score.label}`}>
                     <div className="flex justify-between text-xs font-medium">
                       <span className="capitalize text-muted-foreground">{score.label}</span>
                       <span className="text-foreground">{score.percentage.toFixed(1)}%</span>
@@ -105,7 +150,7 @@ export function ResultsPanel({ result, imageSrc, onReset }: ResultsPanelProps) {
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${score.percentage}%` }}
-                        transition={{ duration: 1, delay: 0.5 + (index * 0.1), ease: "easeOut" }}
+                        transition={{ duration: 1, delay: 0.5 + index * 0.1, ease: "easeOut" }}
                         className={cn("h-full rounded-full", itemStyle.bar)}
                       />
                     </div>
