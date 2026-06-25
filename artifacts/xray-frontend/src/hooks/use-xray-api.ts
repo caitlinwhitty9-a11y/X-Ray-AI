@@ -25,6 +25,12 @@ export interface PredictionResponse {
   tta_passes: number;
 }
 
+export interface GradcamResponse {
+  heatmap_b64: string;
+  class_label: string;
+  class_idx: number;
+}
+
 interface Sample {
   filename: string;
   label: string;
@@ -76,16 +82,31 @@ export function usePredict() {
     mutationFn: async (file) => {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/ml-api/predict", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch("/ml-api/predict", { method: "POST", body: formData });
       if (!res.ok) {
         let msg = "Failed to predict";
-        try {
-          const errData = await res.json();
-          if (errData.detail) msg = errData.detail;
-        } catch (_) {}
+        try { const e = await res.json(); if (e.detail) msg = e.detail; } catch (_) {}
+        throw new Error(msg);
+      }
+      return res.json();
+    },
+  });
+}
+
+export function useGradcam() {
+  return useMutation<GradcamResponse, Error, string>({
+    mutationFn: async (imageSrc: string) => {
+      // Fetch the image (works for both blob: URLs and /ml-api/samples/... paths)
+      const imgRes = await fetch(imageSrc);
+      if (!imgRes.ok) throw new Error("Could not load image for Grad-CAM");
+      const blob = await imgRes.blob();
+
+      const formData = new FormData();
+      formData.append("file", blob, "scan.png");
+      const res = await fetch("/ml-api/gradcam", { method: "POST", body: formData });
+      if (!res.ok) {
+        let msg = "Grad-CAM failed";
+        try { const e = await res.json(); if (e.detail) msg = e.detail; } catch (_) {}
         throw new Error(msg);
       }
       return res.json();
